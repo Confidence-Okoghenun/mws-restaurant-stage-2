@@ -1,8 +1,9 @@
 const cacheName = "restaurantsReviewsPWA";
-const dataCacheName = "restaurantsData";
+const dataCacheName = "restaurantsMapData";
 const filesToCache = [
   "/",
   "/index.html",
+  "/service-worker.js",
   "/restaurant.html",
   "/restaurant.html?id=1",
   "/restaurant.html?id=2",
@@ -14,6 +15,7 @@ const filesToCache = [
   "/restaurant.html?id=8",
   "/restaurant.html?id=9",
   "/restaurant.html?id=10",
+  "/js/localforage.min.js",
   "/js/dbhelper.js",
   "/js/main.js",
   "/js/restaurant_info.js",
@@ -30,7 +32,7 @@ const filesToCache = [
   "/img/10-s.jpg"
 ];
 
-const restaurantsReviewsApiBase = 'http://localhost:1337/';
+const restaurantsReviewsMapUrlBase = `https://api.tiles.mapbox.com`;
 
 /**
  * Cache site assets
@@ -52,7 +54,7 @@ self.addEventListener("activate", e => {
       return Promise.all(
         keyList.map(key => {
           if (key !== cacheName && key !== dataCacheName) {
-            console.log("[ServiceWorker] Removing old cache ", key);
+            console.log("[ServiceWorker] Removing old cache", key);
             return caches.delete(key);
           }
         })
@@ -62,7 +64,7 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  if (e.request.url.startsWith(restaurantsReviewsApiBase)) {
+  if (e.request.url.startsWith(restaurantsReviewsMapUrlBase)) {
     e.respondWith(
       fetch(e.request).then(response => {
         return caches.open(dataCacheName).then(cache => {
@@ -75,7 +77,7 @@ self.addEventListener("fetch", e => {
   } else {
     e.respondWith(
       caches.match(e.request).then(response => {
-        // console.log("[ServiceWorker] Fetch Only", e.request.url);
+        console.log("[ServiceWorker] Fetch", e.request.url);
         return response || fetch(e.request);
       })
     );

@@ -26,38 +26,36 @@ class DBHelper {
    * Fetch all restaurants.
    */
   static fetchRestaurants(callback) {
-    // Tries to load data from cache
-    caches.has("restaurantsData").then(function(boolean) {
-      if (boolean) {
-        console.log('***************************')
-        console.log('Fetching data from cache');
-        caches.match(dbUrl).then(response => {
-          if (response) {
-            response.json().then(restaurantsJson => {
-              callback(null, restaurantsJson);
-            });
-          }
-        });
-      }
-      else {
-        console.log('***************************')
-        console.log('Fetching data from server');
-        // If cache load fails, load from network
-        let xhr = new XMLHttpRequest();
-        xhr.open("GET", DBHelper.DATABASE_URL);
-        xhr.onload = () => {
-          if (xhr.status === 200) {
-            // Got a success response from server!
-            const restaurantsJson = JSON.parse(xhr.responseText);
-            callback(null, restaurantsJson);
-          } else {
-            // Oops!. Got an error from server.
-            const error = `Request failed. Returned status of ${xhr.status}`;
-            callback(error, null);
-          }
-        };
-        xhr.send();
-      }
+    // Tries to load data from DB
+    localforage.getItem('restaurantsData').then(response => {
+      console.log('Fetching data from DB');
+      callback(null, response);
+    }).catch(() => {
+
+      // If DB load fails, load from network
+      console.log('Fetching data from server');
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", DBHelper.DATABASE_URL);
+      xhr.onload = () => {
+
+        if (xhr.status === 200) {
+          // Got a success response from server!
+          const restaurantsJson = JSON.parse(xhr.responseText);
+          localforage.setItem('restaurantsData', restaurantsJson).then(() => {
+                  console.log('Saved data in DB');
+          }).catch(function(err) {
+              console.log(`ERROR :: ${err}`);
+          });
+          callback(null, restaurantsJson);
+        } else {
+          // Oops!. Got an error from server.
+          const error = `Request failed. Returned status of ${xhr.status}`;
+          callback(error, null);
+        }
+
+      };
+      xhr.send();
+
     });
   }
 
